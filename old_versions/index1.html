@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bản đồ trạm sạc giả lập</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 600px; }
+  </style>
+</head>
+<body>
+  <h2>Trạm sạc giả lập trong bán kính 10 km</h2>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    var center = [10.9000, 106.8000];
+    var map = L.map('map').setView(center, 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Gọi API từ backend
+    fetch("http://localhost:3000/stations")
+        .then(res => res.json())
+        .then(data => {
+        data.forEach(st => {
+            var marker = L.marker([st.latitude, st.longitude]).addTo(map)
+            .bindPopup(`
+                <div>
+                <b>${st.name}</b><br>
+                Địa chỉ: ${st.address}<br>
+                Công suất: ${st.power_kw} kW<br>
+                Trạng thái: <span style="color: ${st.status === 'available' ? 'green' : 'red'}">${st.status}</span><br>
+                Giá: ${st.price_per_kwh} đ/kWh<br>
+                Giờ mở cửa: ${st.open_hours}<br><br>
+                <button onclick="bookStation(${st.id})">Đặt chỗ</button>
+                </div>
+            `);
+        });
+        })
+        .catch(err => console.error("❌ Lỗi khi tải trạm sạc:", err));
+
+    // Hàm xử lý khi bấm nút "Đặt chỗ"
+    function bookStation(id) {
+        window.location.href = `booking.html?station=${id}`;
+    }
+    </script>
+
+</body>
+</html>
+

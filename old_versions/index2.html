@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bản đồ trạm sạc</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 600px; }
+    body { font-family: Arial, sans-serif; margin: 10px; }
+    h2 { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Danh sách trạm sạc từ cơ sở dữ liệu</h2>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Tạo bản đồ mặc định (trung tâm Việt Nam)
+    var map = L.map('map').setView([14.0583, 108.2772], 6);
+
+    // Layer nền bản đồ (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Lấy danh sách trạm từ API backend
+    fetch("http://localhost:3000/stations")
+      .then(res => res.json())
+      .then(data => {
+        if (data.length === 0) {
+          alert("⚠ Không có trạm nào trong cơ sở dữ liệu!");
+          return;
+        }
+
+        let bounds = [];
+
+        data.forEach(st => {
+          // Popup hiển thị thông tin
+          let popupContent = `
+            <div>
+              <b>${st.name}</b><br>
+              📍 ${st.address ?? 'Không có'}<br>
+              ⚡ Công suất: ${st.power_kw ?? 'N/A'} kW<br>
+              🔌 Cổng sạc: ${(st.connectors ? JSON.parse(st.connectors).join(", ") : "Không rõ")}<br>
+              💰 Giá: ${st.price_per_kwh ?? 'N/A'} đ/kWh<br>
+              🕒 Giờ mở cửa: ${st.open_hours ?? 'Không rõ'}<br>
+              Trạng thái: <span style="color:${st.status === 'available' ? 'green' : 'red'}">${st.status}</span><br>
+              <i>${st.notes ?? ''}</i><br><br>
+              <button onclick="bookStation(${st.id})">Đặt chỗ</button>
+            </div>
+          `;
+
+          // Tạo marker
+          const marker = L.marker([st.latitude, st.longitude])
+            .addTo(map)
+            .bindPopup(popupContent);
+
+          bounds.push([st.latitude, st.longitude]);
+        });
+
+        // Tự động zoom để thấy tất cả marker
+        if (bounds.length > 0) {
+          map.fitBounds(bounds);
+        }
+      })
+      .catch(err => console.error("❌ Lỗi khi tải trạm sạc:", err));
+
+    // Hàm đặt chỗ
+    function bookStation(id) {
+      window.location.href = `booking.html?station=${id}`;
+    }
+  </script>
+</body>
+</html>

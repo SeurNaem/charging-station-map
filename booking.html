@@ -1,0 +1,20 @@
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const stationId = params.get("station");
+
+  fetch("http://localhost:3000/stations?id=" + stationId)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length > 0) {
+        let st = data[0];
+        document.getElementById("stationInfo").innerHTML = `
+          <h3>${st.name}</h3>
+          <p>Địa chỉ: ${st.address}</p>
+          <p>Công suất: ${st.power_kw} kW</p>
+          <p>Trạng thái: ${st.status}</p>
+        `;
+      }
+    });
+</script>
+
+<div id="stationInfo"></div>
